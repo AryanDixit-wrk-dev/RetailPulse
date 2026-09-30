@@ -29,3 +29,5 @@ airflow/logs/
 .vscode/
 .DS_Store
 Thumbs.db
+# Generated reports
+reports/
