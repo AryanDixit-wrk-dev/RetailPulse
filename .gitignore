@@ -1,0 +1,31 @@
+# Python
+.venv/
+__pycache__/
+*.py[cod]
+
+# Environment variables
+.env
+
+# Logs
+logs/
+*.log
+
+# Generated data
+data/raw/
+data/processed/
+
+# ML artifacts
+models/
+
+# dbt
+dbt/target/
+dbt/logs/
+dbt/dbt_packages/
+
+# Airflow
+airflow/logs/
+
+# OS / IDE
+.vscode/
+.DS_Store
+Thumbs.db
