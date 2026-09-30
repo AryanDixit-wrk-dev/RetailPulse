@@ -9,7 +9,7 @@ __pycache__/
 # Logs
 logs/
 *.log
-
+logs/*.log
 # Generated data
 data/raw/
 data/processed/
