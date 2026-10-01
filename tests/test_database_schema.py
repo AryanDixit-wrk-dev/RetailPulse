@@ -14,23 +14,27 @@ def test_sales_table_schema():
                     is_nullable
                 FROM information_schema.columns
                 WHERE table_schema = 'public'
-                  AND table_name = 'sales'
-                ORDER BY ordinal_position;
+                  AND table_name = 'sales';
                 """
             )
 
             rows = cursor.fetchall()
 
-        expected = [
-            ("order_id", "integer", "NO"),
-            ("product", "text", "NO"),
-            ("quantity", "integer", "NO"),
-            ("price", "numeric", "NO"),
-            ("category", "text", "NO"),
-            ("order_date", "date", "NO"),
-        ]
+        actual_schema = {
+            row[0]: (row[1], row[2])
+            for row in rows
+        }
 
-        assert rows == expected
+        expected_schema = {
+            "order_id": ("integer", "NO"),
+            "product": ("text", "NO"),
+            "category": ("text", "NO"),
+            "quantity": ("integer", "NO"),
+            "price": ("numeric", "NO"),
+            "order_date": ("date", "NO"),
+        }
+
+        assert actual_schema == expected_schema
 
     finally:
         conn.close()

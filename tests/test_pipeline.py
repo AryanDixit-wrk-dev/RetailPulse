@@ -33,10 +33,21 @@ def test_pipeline_succeeds_with_valid_data(tmp_path, monkeypatch):
         lambda df, conn: len(df),
     )
 
+    reports_generated = False
+
+    def fake_generate_sales_report():
+        nonlocal reports_generated
+        reports_generated = True
+
+    monkeypatch.setattr(
+        "pipeline.run_pipeline.generate_sales_report",
+        fake_generate_sales_report,
+    )
+
     result = run_sales_pipeline(str(csv_file))
 
     assert result is True
-
+    assert reports_generated is True
 
 def test_pipeline_rejects_invalid_data(tmp_path, monkeypatch):
     csv_file = tmp_path / "invalid_sales.csv"

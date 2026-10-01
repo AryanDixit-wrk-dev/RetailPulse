@@ -5,6 +5,7 @@ from ingestion.load_csv import load_csv
 from validation.validate_sales import validate_sales_data
 from db.connection import get_connection
 from db.loaders.sales_loader import load_sales_to_database
+from analytics.generate_report import generate_sales_report
 
 
 logging.basicConfig(
@@ -48,6 +49,10 @@ def run_sales_pipeline(file_path: str):
         )
     finally:
         conn.close()
+
+    # 4. Generate reports
+    generate_sales_report()
+    logger.info("Reports generated successfully")
 
     logger.info("Pipeline completed successfully")
 
