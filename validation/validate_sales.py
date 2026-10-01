@@ -9,36 +9,49 @@ def validate_sales_data(df: pd.DataFrame) -> list[str]:
         A list of validation errors.
         An empty list means the data passed validation.
     """
+
     errors = []
 
-    required_columns = ["order_id", "product", "quantity", "price"]
+    required_columns = [
+        "order_id",
+        "product",
+        "category",
+        "quantity",
+        "price",
+        "order_date",
+    ]
 
-    # Check required columns
     missing_columns = [
-        column for column in required_columns
+        column
+        for column in required_columns
         if column not in df.columns
     ]
 
     if missing_columns:
         errors.append(f"Missing columns: {missing_columns}")
-
-    # Stop here if required columns are missing
-    if missing_columns:
         return errors
 
-    # Check missing values
     if df[required_columns].isnull().any().any():
         errors.append("Missing values found in required columns.")
 
-    # Check quantity
     if (df["quantity"] <= 0).any():
         errors.append("Quantity must be greater than zero.")
 
-    # Check price
     if (df["price"] <= 0).any():
         errors.append("Price must be greater than zero.")
-    # Check duplicate order IDs
+
     if df["order_id"].duplicated().any():
         errors.append("Duplicate order_id values found.")
-        
+
+    if df["category"].isnull().any():
+        errors.append("Category cannot be missing.")
+
+    if df["order_date"].isnull().any():
+        errors.append("Order date cannot be missing.")
+
+    try:
+        pd.to_datetime(df["order_date"], errors="raise")
+    except (ValueError, TypeError):
+        errors.append("Invalid order_date values found.")
+
     return errors

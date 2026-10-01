@@ -19,19 +19,30 @@ def load_sales_to_database(
         for row in df.itertuples(index=False):
             cursor.execute(
                 """
-                INSERT INTO sales (order_id, product, quantity, price)
-                VALUES (%s, %s, %s, %s)
+                INSERT INTO sales (
+                    order_id,
+                    product,
+                    category,
+                    quantity,
+                    price,
+                    order_date
+                )
+                VALUES (%s, %s, %s, %s, %s, %s)
                 ON CONFLICT (order_id)
                 DO UPDATE SET
                     product = EXCLUDED.product,
+                    category = EXCLUDED.category,
                     quantity = EXCLUDED.quantity,
-                    price = EXCLUDED.price
+                    price = EXCLUDED.price,
+                    order_date = EXCLUDED.order_date
                 """,
                 (
                     row.order_id,
                     row.product,
+                    row.category,
                     row.quantity,
                     row.price,
+                    row.order_date,
                 ),
             )
 
