@@ -1,3 +1,4 @@
+import argparse
 import logging
 
 from ingestion.load_csv import load_csv
@@ -54,4 +55,18 @@ def run_sales_pipeline(file_path: str):
 
 
 if __name__ == "__main__":
-    run_sales_pipeline("data/raw/sample_sales.csv")
+    parser = argparse.ArgumentParser(
+        description="Run the RetailPulse sales pipeline."
+    )
+
+    parser.add_argument(
+        "file_path",
+        help="Path to the sales CSV file.",
+    )
+
+    args = parser.parse_args()
+
+    success = run_sales_pipeline(args.file_path)
+
+    if not success:
+        raise SystemExit(1)
