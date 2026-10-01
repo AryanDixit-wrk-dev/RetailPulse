@@ -1,0 +1,5 @@
+ALTER TABLE sales
+ALTER COLUMN category SET NOT NULL;
+
+ALTER TABLE sales
+ALTER COLUMN order_date SET NOT NULL;
