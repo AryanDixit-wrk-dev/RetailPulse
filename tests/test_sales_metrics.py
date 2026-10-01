@@ -4,6 +4,7 @@ from analytics.sales_metrics import (
     calculate_sales_metrics,
     sales_by_product,
     sales_by_category,
+    sales_by_date,
 )
 
 def test_calculate_sales_metrics():
@@ -97,3 +98,29 @@ def test_sales_by_category():
     assert accessories["total_quantity"] == 8
     assert accessories["total_sales"] == 8500
     assert accessories["total_orders"] == 2
+
+def test_sales_by_date():
+    df = pd.DataFrame(
+        {
+            "order_id": [1001, 1002, 1003],
+            "product": ["Laptop", "Mouse", "Keyboard"],
+            "category": ["Electronics", "Accessories", "Accessories"],
+            "quantity": [2, 5, 3],
+            "price": [55000, 800, 1500],
+            "order_date": [
+                "2026-09-25",
+                "2026-09-25",
+                "2026-09-26",
+            ],
+        }
+    )
+
+    result = sales_by_date(df)
+
+    first_day = result[
+        result["order_date"] == pd.Timestamp("2026-09-25")
+    ].iloc[0]
+
+    assert first_day["total_quantity"] == 7
+    assert first_day["total_sales"] == 110000 + 4000
+    assert first_day["total_orders"] == 2

@@ -21,6 +21,24 @@ def calculate_sales_metrics(df: pd.DataFrame) -> dict:
         "average_order_value": average_order_value,
     }
 
+
+def sales_by_product(df: pd.DataFrame) -> pd.DataFrame:
+    """Calculate sales performance by product."""
+
+    result = (
+        df.assign(total_sales=df["quantity"] * df["price"])
+        .groupby("product", as_index=False)
+        .agg(
+            total_quantity=("quantity", "sum"),
+            total_sales=("total_sales", "sum"),
+            total_orders=("order_id", "count"),
+        )
+        .sort_values("total_sales", ascending=False)
+    )
+
+    return result
+
+
 def sales_by_category(df: pd.DataFrame) -> pd.DataFrame:
     """Calculate sales performance by category."""
 
@@ -38,18 +56,21 @@ def sales_by_category(df: pd.DataFrame) -> pd.DataFrame:
     return result
 
 
-def sales_by_product(df: pd.DataFrame) -> pd.DataFrame:
-    """Calculate sales performance by product."""
+def sales_by_date(df: pd.DataFrame) -> pd.DataFrame:
+    """Calculate daily sales performance."""
 
     result = (
-        df.assign(total_sales=df["quantity"] * df["price"])
-        .groupby("product", as_index=False)
+        df.assign(
+            total_sales=df["quantity"] * df["price"],
+            order_date=pd.to_datetime(df["order_date"]),
+        )
+        .groupby("order_date", as_index=False)
         .agg(
             total_quantity=("quantity", "sum"),
             total_sales=("total_sales", "sum"),
             total_orders=("order_id", "count"),
         )
-        .sort_values("total_sales", ascending=False)
+        .sort_values("order_date")
     )
 
     return result
