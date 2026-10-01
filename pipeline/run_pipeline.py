@@ -3,6 +3,10 @@ import logging
 
 from ingestion.load_csv import load_csv
 from validation.validate_sales import validate_sales_data
+from validation.data_quality import (
+    generate_quality_report,
+    save_quality_report,
+)
 from db.connection import get_connection
 from db.loaders.sales_loader import load_sales_to_database
 from analytics.generate_report import generate_sales_report
@@ -25,7 +29,12 @@ def run_sales_pipeline(file_path: str):
     df = load_csv(file_path)
     logger.info("Loaded %d records", len(df))
 
-    # 2. Validate
+    # 2. Data quality
+    quality_report = generate_quality_report(df)
+    save_quality_report(quality_report)
+    logger.info("Data quality report generated")
+
+    # 3. Validate
     errors = validate_sales_data(df)
 
     if errors:
@@ -38,7 +47,7 @@ def run_sales_pipeline(file_path: str):
 
     logger.info("Validation passed")
 
-    # 3. Load into PostgreSQL
+    # 4. Load into PostgreSQL
     conn = get_connection()
 
     try:
@@ -50,7 +59,7 @@ def run_sales_pipeline(file_path: str):
     finally:
         conn.close()
 
-    # 4. Generate reports
+    # 5. Generate reports
     generate_sales_report()
     logger.info("Reports generated successfully")
 

@@ -81,3 +81,42 @@ def test_pipeline_rejects_invalid_data(tmp_path, monkeypatch):
 
     assert result is False
     assert database_called is False
+def test_pipeline_generates_quality_report_for_invalid_data(
+    tmp_path,
+    monkeypatch,
+):
+    csv_file = tmp_path / "invalid_sales.csv"
+
+    df = pd.DataFrame(
+        {
+            "order_id": [1001, 1002],
+            "product": ["Laptop", "Mouse"],
+            "category": ["Electronics", "Accessories"],
+            "quantity": [2, 0],
+            "price": [55000, 800],
+            "order_date": [
+                "2026-09-25",
+                "2026-09-26",
+            ],
+        }
+    )
+
+    df.to_csv(csv_file, index=False)
+
+    quality_report = {}
+
+    def fake_save_quality_report(report):
+        quality_report.update(report)
+
+    monkeypatch.setattr(
+        "pipeline.run_pipeline.save_quality_report",
+        fake_save_quality_report,
+    )
+
+    result = run_sales_pipeline(str(csv_file))
+
+    assert result is False
+    assert quality_report["rows_received"] == 2
+    assert quality_report["rows_valid"] == 1
+    assert quality_report["rows_rejected"] == 1
+    assert quality_report["invalid_quantity_rows"] == 1
