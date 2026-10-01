@@ -16,6 +16,8 @@ data/processed/
 
 # ML artifacts
 models/
+!dbt/retailpulse_dbt/models/
+!dbt/retailpulse_dbt/models/**
 
 # dbt
 dbt/target/
