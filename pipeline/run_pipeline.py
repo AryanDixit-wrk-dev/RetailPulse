@@ -7,6 +7,7 @@ from validation.data_quality import (
     generate_quality_report,
     save_quality_report,
 )
+from transformation.sales_transform import transform_sales_data
 from db.connection import get_connection
 from db.loaders.sales_loader import load_sales_to_database
 from analytics.generate_report import generate_sales_report
@@ -47,7 +48,11 @@ def run_sales_pipeline(file_path: str):
 
     logger.info("Validation passed")
 
-    # 4. Load into PostgreSQL
+    # 4. Transform
+    df = transform_sales_data(df)
+    logger.info("Sales data transformed")
+
+    # 5. Load into PostgreSQL
     conn = get_connection()
 
     try:
@@ -59,7 +64,7 @@ def run_sales_pipeline(file_path: str):
     finally:
         conn.close()
 
-    # 5. Generate reports
+    # 6. Generate reports
     generate_sales_report()
     logger.info("Reports generated successfully")
 
