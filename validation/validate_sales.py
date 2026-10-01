@@ -50,7 +50,7 @@ def validate_sales_data(df: pd.DataFrame) -> list[str]:
         errors.append("Order date cannot be missing.")
 
     try:
-        pd.to_datetime(df["order_date"], errors="raise")
+        pd.to_datetime(df["order_date"], format="%Y-%m-%d", errors="raise")
     except (ValueError, TypeError):
         errors.append("Invalid order_date values found.")
 
