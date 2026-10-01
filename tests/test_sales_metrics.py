@@ -1,7 +1,10 @@
 import pandas as pd
 
-from analytics.sales_metrics import calculate_sales_metrics, sales_by_product
-
+from analytics.sales_metrics import (
+    calculate_sales_metrics,
+    sales_by_product,
+    sales_by_category,
+)
 
 def test_calculate_sales_metrics():
     df = pd.DataFrame(
@@ -73,3 +76,24 @@ def test_sales_by_product():
     assert laptop["total_quantity"] == 3
     assert laptop["total_sales"] == 165000
     assert laptop["total_orders"] == 2
+
+def test_sales_by_category():
+    df = pd.DataFrame(
+        {
+            "order_id": [1001, 1002, 1003],
+            "product": ["Laptop", "Mouse", "Keyboard"],
+            "category": ["Electronics", "Accessories", "Accessories"],
+            "quantity": [2, 5, 3],
+            "price": [55000, 800, 1500],
+        }
+    )
+
+    result = sales_by_category(df)
+
+    accessories = result[
+        result["category"] == "Accessories"
+    ].iloc[0]
+
+    assert accessories["total_quantity"] == 8
+    assert accessories["total_sales"] == 8500
+    assert accessories["total_orders"] == 2

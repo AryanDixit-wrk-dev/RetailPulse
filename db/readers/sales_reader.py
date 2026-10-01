@@ -11,8 +11,10 @@ def read_sales_from_database(
         SELECT
             order_id,
             product,
+            category,
             quantity,
-            price
+            price,
+            order_date
         FROM sales
         ORDER BY order_id;
     """

@@ -21,6 +21,22 @@ def calculate_sales_metrics(df: pd.DataFrame) -> dict:
         "average_order_value": average_order_value,
     }
 
+def sales_by_category(df: pd.DataFrame) -> pd.DataFrame:
+    """Calculate sales performance by category."""
+
+    result = (
+        df.assign(total_sales=df["quantity"] * df["price"])
+        .groupby("category", as_index=False)
+        .agg(
+            total_quantity=("quantity", "sum"),
+            total_sales=("total_sales", "sum"),
+            total_orders=("order_id", "count"),
+        )
+        .sort_values("total_sales", ascending=False)
+    )
+
+    return result
+
 
 def sales_by_product(df: pd.DataFrame) -> pd.DataFrame:
     """Calculate sales performance by product."""

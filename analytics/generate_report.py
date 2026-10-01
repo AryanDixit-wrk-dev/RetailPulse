@@ -6,11 +6,12 @@ from db.readers.sales_reader import read_sales_from_database
 from analytics.sales_metrics import (
     calculate_sales_metrics,
     sales_by_product,
+    sales_by_category,
 )
 
 
 def generate_sales_report():
-    """Generate sales summary and product-level reports."""
+    """Generate sales summary, product, and category reports."""
 
     conn = get_connection()
 
@@ -34,8 +35,15 @@ def generate_sales_report():
     product_path = Path("reports/sales_by_product.csv")
     product_report.to_csv(product_path, index=False)
 
+    # Category-level metrics
+    category_report = sales_by_category(sales_df)
+
+    category_path = Path("reports/sales_by_category.csv")
+    category_report.to_csv(category_path, index=False)
+
     print(f"Summary report generated: {summary_path}")
     print(f"Product report generated: {product_path}")
+    print(f"Category report generated: {category_path}")
 
 
 if __name__ == "__main__":
