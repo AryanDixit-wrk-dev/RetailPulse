@@ -24,8 +24,8 @@ dbt/target/
 dbt/logs/
 dbt/dbt_packages/
 
-# Airflow
-airflow/logs/
+# Airflow generated configuration
+airflow/config/
 
 # OS / IDE
 .vscode/
