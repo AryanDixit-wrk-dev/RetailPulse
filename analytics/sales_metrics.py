@@ -6,7 +6,13 @@ def calculate_sales_metrics(df: pd.DataFrame) -> dict:
 
     total_orders = int(len(df))
     total_quantity = int(df["quantity"].sum())
-    total_sales = float((df["quantity"] * df["price"]).sum())
+
+    if "total_sales" in df.columns:
+        total_sales = float(df["total_sales"].sum())
+    else:
+        total_sales = float(
+            (df["quantity"] * df["price"]).sum()
+        )
 
     average_order_value = (
         total_sales / total_orders
@@ -25,9 +31,15 @@ def calculate_sales_metrics(df: pd.DataFrame) -> dict:
 def sales_by_product(df: pd.DataFrame) -> pd.DataFrame:
     """Calculate sales performance by product."""
 
+    data = df.copy()
+
+    if "total_sales" not in data.columns:
+        data["total_sales"] = (
+            data["quantity"] * data["price"]
+        )
+
     result = (
-        df.assign(total_sales=df["quantity"] * df["price"])
-        .groupby("product", as_index=False)
+        data.groupby("product", as_index=False)
         .agg(
             total_quantity=("quantity", "sum"),
             total_sales=("total_sales", "sum"),
@@ -42,9 +54,15 @@ def sales_by_product(df: pd.DataFrame) -> pd.DataFrame:
 def sales_by_category(df: pd.DataFrame) -> pd.DataFrame:
     """Calculate sales performance by category."""
 
+    data = df.copy()
+
+    if "total_sales" not in data.columns:
+        data["total_sales"] = (
+            data["quantity"] * data["price"]
+        )
+
     result = (
-        df.assign(total_sales=df["quantity"] * df["price"])
-        .groupby("category", as_index=False)
+        data.groupby("category", as_index=False)
         .agg(
             total_quantity=("quantity", "sum"),
             total_sales=("total_sales", "sum"),
@@ -59,12 +77,19 @@ def sales_by_category(df: pd.DataFrame) -> pd.DataFrame:
 def sales_by_date(df: pd.DataFrame) -> pd.DataFrame:
     """Calculate daily sales performance."""
 
-    result = (
-        df.assign(
-            total_sales=df["quantity"] * df["price"],
-            order_date=pd.to_datetime(df["order_date"]),
+    data = df.copy()
+
+    data["order_date"] = pd.to_datetime(
+        data["order_date"]
+    )
+
+    if "total_sales" not in data.columns:
+        data["total_sales"] = (
+            data["quantity"] * data["price"]
         )
-        .groupby("order_date", as_index=False)
+
+    result = (
+        data.groupby("order_date", as_index=False)
         .agg(
             total_quantity=("quantity", "sum"),
             total_sales=("total_sales", "sum"),
@@ -72,5 +97,7 @@ def sales_by_date(df: pd.DataFrame) -> pd.DataFrame:
         )
         .sort_values("order_date")
     )
+
+    return result
 
     return result

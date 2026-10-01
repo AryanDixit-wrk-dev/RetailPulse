@@ -3,6 +3,8 @@ from pathlib import Path
 
 from db.connection import get_connection
 from db.readers.sales_reader import read_sales_from_database
+from transformation.sales_transform import transform_sales_data
+
 from analytics.sales_metrics import (
     calculate_sales_metrics,
     sales_by_product,
@@ -17,8 +19,10 @@ def generate_sales_report():
     conn = get_connection()
     try:
         sales_df = read_sales_from_database(conn)
+        
     finally:
         conn.close()
+    sales_df = transform_sales_data(sales_df)
 
     reports_dir = Path("reports")
     reports_dir.mkdir(exist_ok=True)

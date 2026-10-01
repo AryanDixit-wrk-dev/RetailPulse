@@ -124,3 +124,21 @@ def test_sales_by_date():
     assert first_day["total_quantity"] == 7
     assert first_day["total_sales"] == 110000 + 4000
     assert first_day["total_orders"] == 2
+def test_calculate_sales_metrics_uses_total_sales():
+    df = pd.DataFrame(
+        {
+            "order_id": [1001, 1002],
+            "product": ["Laptop", "Mouse"],
+            "category": ["Electronics", "Accessories"],
+            "quantity": [2, 5],
+            "price": [55000, 800],
+            "order_date": pd.to_datetime(
+                ["2026-09-25", "2026-09-26"]
+            ),
+            "total_sales": [110000, 4000],
+        }
+    )
+
+    result = calculate_sales_metrics(df)
+
+    assert result["total_sales"] == 114000.0
