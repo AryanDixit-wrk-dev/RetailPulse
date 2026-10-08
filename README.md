@@ -54,3 +54,4 @@ Dashboard includes sales KPIs, category analysis, product analysis, quantity ana
 Environment files, generated Airflow configuration, logs, generated data, and other local artifacts are excluded from version control where appropriate.
 
 
+GitHub repository managed with Git and VS Code.
