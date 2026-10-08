@@ -5,6 +5,7 @@ import psycopg
 def load_sales_to_database(
     df: pd.DataFrame,
     conn: psycopg.Connection,
+    pipeline_run_id: int,
 ) -> int:
     """
     Insert new sales records or update existing records.
@@ -25,16 +26,18 @@ def load_sales_to_database(
                     category,
                     quantity,
                     price,
-                    order_date
+                    order_date,
+                    pipeline_run_id
                 )
-                VALUES (%s, %s, %s, %s, %s, %s)
+                VALUES (%s, %s, %s, %s, %s, %s, %s)
                 ON CONFLICT (order_id)
                 DO UPDATE SET
                     product = EXCLUDED.product,
                     category = EXCLUDED.category,
                     quantity = EXCLUDED.quantity,
                     price = EXCLUDED.price,
-                    order_date = EXCLUDED.order_date
+                    order_date = EXCLUDED.order_date,
+                    pipeline_run_id = EXCLUDED.pipeline_run_id
                 """,
                 (
                     row.order_id,
@@ -43,6 +46,7 @@ def load_sales_to_database(
                     row.quantity,
                     row.price,
                     row.order_date,
+                    pipeline_run_id,
                 ),
             )
 

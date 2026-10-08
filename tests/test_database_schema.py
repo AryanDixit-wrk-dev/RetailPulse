@@ -32,6 +32,7 @@ def test_sales_table_schema():
             "quantity": ("integer", "NO"),
             "price": ("numeric", "NO"),
             "order_date": ("date", "NO"),
+            "pipeline_run_id": ("bigint", "YES"),
         }
 
         assert actual_schema == expected_schema
