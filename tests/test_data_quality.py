@@ -158,6 +158,7 @@ def test_quality_report_contains_all_metrics():
         "duplicate_percentage",
         "missing_value_percentage",
         "rejected_percentage",
+        "missing_values_by_column",
     }
 
     assert set(report.keys()) == expected_keys
@@ -283,3 +284,26 @@ def test_quality_report_calculates_rejected_percentage():
     assert report["rows_received"] == 4
     assert report["rows_rejected"] == 1
     assert report["rejected_percentage"] == 25.0
+
+def test_quality_report_calculates_missing_values_by_column():
+    df = pd.DataFrame(
+        {
+            "order_id": [1001, 1002, 1003],
+            "product": ["Laptop", None, "Mouse"],
+            "category": ["Electronics", None, "Accessories"],
+            "quantity": [2, 5, 3],
+            "price": [55000, 800, 1500],
+            "order_date": [
+                "2026-09-25",
+                "2026-09-26",
+                "2026-09-27",
+            ],
+        }
+    )
+
+    report = generate_quality_report(df)
+
+    assert report["missing_values_by_column"] == {
+        "product": 1,
+        "category": 1,
+    }

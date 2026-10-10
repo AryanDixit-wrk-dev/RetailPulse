@@ -50,6 +50,12 @@ def generate_quality_report(df: pd.DataFrame) -> dict:
         rows_with_missing_values.sum()
     )
 
+    missing_values_by_column = {
+        column: int(count)
+            for column, count in df.isnull().sum().items()
+            if count > 0
+    }
+
     missing_value_percentage = (
         missing_value_rows / rows_received * 100
         if rows_received > 0
@@ -80,6 +86,7 @@ def generate_quality_report(df: pd.DataFrame) -> dict:
         "invalid_order_date_rows": invalid_order_date_rows,
         "duplicate_percentage": duplicate_percentage,
         "rejected_percentage": rejected_percentage,
+        "missing_values_by_column": missing_values_by_column,
     }
 
 
