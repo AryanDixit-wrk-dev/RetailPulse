@@ -1,7 +1,23 @@
 version: 2
-
 sources:
   - name: retailpulse
+    description: "RetailPulse operational sales data stored in PostgreSQL."
     schema: public
     tables:
       - name: sales
+        description: "Source sales records loaded by the RetailPulse ingestion pipeline."
+        columns:
+          - name: order_id
+            description: "Unique identifier for the sales order."
+          - name: product
+            description: "Name of the product sold."
+          - name: category
+            description: "Product category."
+          - name: quantity
+            description: "Number of units sold."
+          - name: price
+            description: "Price per unit."
+          - name: order_date
+            description: "Date on which the order was placed."
+          - name: pipeline_run_id
+            description: "Identifier of the RetailPulse pipeline run that loaded the record."

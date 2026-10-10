@@ -1,29 +1,30 @@
 version: 2
-
 models:
   - name: stg_sales
+    description: "Staging model containing sales records selected from the RetailPulse source table."
     columns:
       - name: order_id
+        description: "Unique identifier for the sales order."
         data_tests:
           - unique
           - not_null
-
       - name: product
+        description: "Name of the product sold."
         data_tests:
           - not_null
-
       - name: category
+        description: "Product category."
         data_tests:
           - not_null
-
       - name: quantity
+        description: "Number of units sold."
         data_tests:
           - not_null
-
       - name: price
+        description: "Price per unit."
         data_tests:
           - not_null
-
       - name: order_date
+        description: "Date on which the order was placed."
         data_tests:
           - not_null
