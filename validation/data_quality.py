@@ -30,12 +30,30 @@ def generate_quality_report(df: pd.DataFrame) -> dict:
     rows_valid = int((~invalid_rows).sum())
     rows_rejected = int(invalid_rows.sum())
 
+    rejected_percentage = (
+        rows_rejected / rows_received * 100
+            if rows_received > 0
+            else 0.0
+    )
+
     duplicate_order_ids = int(
         df["order_id"].duplicated().sum()
     )
 
+    duplicate_percentage = (
+        duplicate_order_ids / rows_received * 100
+        if rows_received > 0
+        else 0.0
+    )
+
     missing_value_rows = int(
         rows_with_missing_values.sum()
+    )
+
+    missing_value_percentage = (
+        missing_value_rows / rows_received * 100
+        if rows_received > 0
+        else 0.0
     )
 
     invalid_quantity_rows = int(
@@ -56,9 +74,12 @@ def generate_quality_report(df: pd.DataFrame) -> dict:
         "rows_rejected": rows_rejected,
         "duplicate_order_ids": duplicate_order_ids,
         "rows_with_missing_values": missing_value_rows,
+        "missing_value_percentage": missing_value_percentage,
         "invalid_quantity_rows": invalid_quantity_rows,
         "invalid_price_rows": invalid_price_rows,
         "invalid_order_date_rows": invalid_order_date_rows,
+        "duplicate_percentage": duplicate_percentage,
+        "rejected_percentage": rejected_percentage,
     }
 
 
@@ -79,3 +100,30 @@ def save_quality_report(
         json.dumps(report, indent=4),
         encoding="utf-8",
     )
+
+def test_quality_report_calculates_duplicate_percentage():
+    df = pd.DataFrame(
+        {
+            "order_id": [1001, 1001, 1002, 1003],
+            "product": ["Laptop", "Laptop", "Mouse", "Keyboard"],
+            "category": [
+                "Electronics",
+                "Electronics",
+                "Accessories",
+                "Accessories",
+            ],
+            "quantity": [2, 2, 5, 3],
+            "price": [55000, 55000, 800, 1500],
+            "order_date": [
+                "2026-09-25",
+                "2026-09-25",
+                "2026-09-26",
+                "2026-09-27",
+            ],
+        }
+    )
+
+    report = generate_quality_report(df)
+
+    assert report["duplicate_order_ids"] == 1
+    assert report["duplicate_percentage"] == 25.0

@@ -96,6 +96,15 @@ def test_pipeline_rejects_invalid_data(tmp_path, monkeypatch):
         database_called = True
         return len(df)
 
+    def fake_load_quarantine_records(
+        df,
+        conn,
+        pipeline_run_id,
+        source_file,
+        rejection_reason,
+    ):
+        return len(df)
+
     monkeypatch.setattr(
         "pipeline.run_pipeline.get_connection",
         lambda: FakeConnection(),
@@ -108,11 +117,15 @@ def test_pipeline_rejects_invalid_data(tmp_path, monkeypatch):
         fake_load_sales_to_database,
     )
 
+    monkeypatch.setattr(
+        "pipeline.run_pipeline.load_quarantine_records",
+        fake_load_quarantine_records,
+    )
+
     result = run_sales_pipeline(str(csv_file))
 
     assert result is True
     assert database_called is True
-
 
 def test_pipeline_generates_quality_report_for_invalid_data(
     tmp_path,
@@ -245,6 +258,91 @@ def test_pipeline_quarantines_invalid_quantity_rows(tmp_path, monkeypatch):
     )
 
     df.to_csv(csv_file, index=False)
+
+def test_pipeline_quarantines_invalid_quantity_rows(
+    tmp_path,
+    monkeypatch,
+):
+    csv_file = tmp_path / "sales.csv"
+
+    df = pd.DataFrame(
+        {
+            "order_id": [2001, 2002],
+            "product": ["Laptop", "Mouse"],
+            "category": ["Electronics", "Accessories"],
+            "quantity": [2, 0],
+            "price": [55000, 800],
+            "order_date": [
+                "2026-10-10",
+                "2026-10-10",
+            ],
+        }
+    )
+
+    df.to_csv(csv_file, index=False)
+
+    class FakeConnection:
+        def close(self):
+            pass
+
+    loaded_sales = []
+    quarantined_rows = []
+
+    def fake_load_sales_to_database(
+        df,
+        conn,
+        pipeline_run_id,
+    ):
+        loaded_sales.extend(df["order_id"].tolist())
+        return len(df)
+
+    def fake_load_quarantine_records(
+        df,
+        conn,
+        pipeline_run_id,
+        source_file,
+        rejection_reason,
+    ):
+        quarantined_rows.append(
+            {
+                "order_ids": df["order_id"].tolist(),
+                "reason": rejection_reason,
+            }
+        )
+        return len(df)
+
+    monkeypatch.setattr(
+        "pipeline.run_pipeline.get_connection",
+        lambda: FakeConnection(),
+    )
+
+    mock_pipeline_tracking(monkeypatch)
+
+    monkeypatch.setattr(
+        "pipeline.run_pipeline.load_sales_to_database",
+        fake_load_sales_to_database,
+    )
+
+    monkeypatch.setattr(
+        "pipeline.run_pipeline.load_quarantine_records",
+        fake_load_quarantine_records,
+    )
+
+    monkeypatch.setattr(
+        "pipeline.run_pipeline.generate_sales_report",
+        lambda: None,
+    )
+
+    result = run_sales_pipeline(str(csv_file))
+
+    assert result is True
+    assert loaded_sales == [2001]
+    assert quarantined_rows == [
+        {
+            "order_ids": [2002],
+            "reason": "Quantity must be greater than zero.",
+        }
+    ]
 
     # We will connect quarantine behavior to the pipeline
     # after this test structure is in place.    

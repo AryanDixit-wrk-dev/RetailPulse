@@ -105,7 +105,17 @@ def run_sales_pipeline(file_path: str):
         )
 
         df = valid_rows 
-
+        if not invalid_rows.empty:
+            for reason in rejection_reasons.unique():
+                rows = invalid_rows[rejection_reasons == reason]
+                load_quarantine_records(
+                            rows,
+                            conn,
+                            pipeline_run_id=run_id,
+                            source_file=file_path,
+                            rejection_reason=reason,
+                        )
+        
         # 5. Transform
         df = transform_sales_data(df)
         logger.info("Sales data transformed")

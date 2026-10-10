@@ -155,6 +155,9 @@ def test_quality_report_contains_all_metrics():
         "invalid_quantity_rows",
         "invalid_price_rows",
         "invalid_order_date_rows",
+        "duplicate_percentage",
+        "missing_value_percentage",
+        "rejected_percentage",
     }
 
     assert set(report.keys()) == expected_keys
@@ -203,3 +206,80 @@ def test_quality_report_marks_invalid_rows_as_rejected():
     assert report["rows_received"] == 3
     assert report["rows_valid"] == 2
     assert report["rows_rejected"] == 1
+
+def test_quality_report_calculates_duplicate_percentage():
+    df = pd.DataFrame(
+        {
+            "order_id": [1001, 1001, 1002, 1003],
+            "product": ["Laptop", "Laptop", "Mouse", "Keyboard"],
+            "category": [
+                "Electronics",
+                "Electronics",
+                "Accessories",
+                "Accessories",
+            ],
+            "quantity": [2, 2, 5, 3],
+            "price": [55000, 55000, 800, 1500],
+            "order_date": [
+                "2026-09-25",
+                "2026-09-25",
+                "2026-09-26",
+                "2026-09-27",
+            ],
+        }
+    )
+
+    report = generate_quality_report(df)
+
+    assert report["duplicate_order_ids"] == 1
+    assert report["duplicate_percentage"] == 25.0
+
+def test_quality_report_calculates_missing_value_percentage():
+    df = pd.DataFrame(
+        {
+            "order_id": [1001, 1002, 1003, 1004],
+            "product": ["Laptop", None, "Mouse", "Keyboard"],
+            "category": ["Electronics", "Accessories", None, "Accessories"],
+            "quantity": [2, 5, 3, 4],
+            "price": [55000, 800, 1500, 2500],
+            "order_date": [
+                "2026-09-25",
+                "2026-09-26",
+                "2026-09-27",
+                "2026-09-28",
+            ],
+        }
+    )
+
+    report = generate_quality_report(df)
+
+    assert report["rows_with_missing_values"] == 2
+    assert report["missing_value_percentage"] == 50.0
+
+def test_quality_report_calculates_rejected_percentage():
+    df = pd.DataFrame(
+        {
+            "order_id": [1001, 1002, 1003, 1004],
+            "product": ["Laptop", "Mouse", "Keyboard", "Monitor"],
+            "category": [
+                "Electronics",
+                "Accessories",
+                "Accessories",
+                "Electronics",
+            ],
+            "quantity": [2, 0, 3, 4],
+            "price": [55000, 800, 1500, 18000],
+            "order_date": [
+                "2026-09-25",
+                "2026-09-26",
+                "2026-09-27",
+                "2026-09-28",
+            ],
+        }
+    )
+
+    report = generate_quality_report(df)
+
+    assert report["rows_received"] == 4
+    assert report["rows_rejected"] == 1
+    assert report["rejected_percentage"] == 25.0
