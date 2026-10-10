@@ -66,6 +66,12 @@ def generate_quality_report(df: pd.DataFrame) -> dict:
         invalid_quantity.sum()
     )
 
+    invalid_quantity_percentage = (
+          invalid_quantity_rows / rows_received * 100
+            if rows_received > 0
+            else 0.0
+    )
+
     invalid_price_rows = int(
         invalid_price.sum()
     )
@@ -87,6 +93,7 @@ def generate_quality_report(df: pd.DataFrame) -> dict:
         "duplicate_percentage": duplicate_percentage,
         "rejected_percentage": rejected_percentage,
         "missing_values_by_column": missing_values_by_column,
+        "invalid_quantity_percentage": invalid_quantity_percentage,
     }
 
 

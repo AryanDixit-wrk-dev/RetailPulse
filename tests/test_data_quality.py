@@ -159,6 +159,7 @@ def test_quality_report_contains_all_metrics():
         "missing_value_percentage",
         "rejected_percentage",
         "missing_values_by_column",
+        "invalid_quantity_percentage",
     }
 
     assert set(report.keys()) == expected_keys
@@ -307,3 +308,30 @@ def test_quality_report_calculates_missing_values_by_column():
         "product": 1,
         "category": 1,
     }
+
+def test_quality_report_calculates_invalid_quantity_percentage():
+    df = pd.DataFrame(
+        {
+            "order_id": [1001, 1002, 1003, 1004],
+            "product": ["Laptop", "Mouse", "Keyboard", "Monitor"],
+            "category": [
+                "Electronics",
+                "Accessories",
+                "Accessories",
+                "Electronics",
+            ],
+            "quantity": [2, 0, -1, 4],
+            "price": [55000, 800, 1500, 18000],
+            "order_date": [
+                "2026-09-25",
+                "2026-09-26",
+                "2026-09-27",
+                "2026-09-28",
+            ],
+        }
+    )
+
+    report = generate_quality_report(df)
+
+    assert report["invalid_quantity_rows"] == 2
+    assert report["invalid_quantity_percentage"] == 50.0
