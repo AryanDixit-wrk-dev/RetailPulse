@@ -2,7 +2,7 @@ import argparse
 import logging
 
 from psycopg.errors import UniqueViolation
-
+from db.loaders.warehouse_loader import load_warehouse_data
 from ingestion.load_csv import load_csv
 from contracts.sales_contract import validate_sales_schema
 from validation.validate_sales import (
@@ -132,6 +132,17 @@ def run_sales_pipeline(file_path: str):
             affected_rows,
         )
 
+        warehouse_rows = load_warehouse_data(
+            df,
+            conn,
+            pipeline_run_id=run_id,
+        )
+
+        logger.info(
+            "Warehouse load completed. Rows loaded: %d",
+            warehouse_rows,
+        )
+        
         # 7. Generate reports
         generate_sales_report()
         logger.info("Reports generated successfully")

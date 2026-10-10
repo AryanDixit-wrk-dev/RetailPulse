@@ -1,19 +1,30 @@
 version: 2
+
 models:
   - name: int_sales
-    description: "Intermediate sales model containing cleaned sales records and calculated sales value."
+    description: "Intermediate sales model built from the warehouse fact table."
+
     columns:
       - name: order_id
         description: "Unique identifier for the sales order."
-      - name: product
-        description: "Name of the product sold."
-      - name: category
-        description: "Product category."
+
+      - name: date_key
+        description: "Foreign key to the date dimension."
+
+      - name: product_key
+        description: "Foreign key to the product dimension."
+
+      - name: category_key
+        description: "Foreign key to the category dimension."
+
       - name: quantity
         description: "Number of units sold."
-      - name: price
+
+      - name: unit_price
         description: "Price per unit."
-      - name: order_date
-        description: "Date on which the order was placed."
+
       - name: total_sales
-        description: "Total sales value calculated as quantity multiplied by price."
+        description: "Total sales value for the order."
+
+      - name: pipeline_run_id
+        description: "Identifier of the RetailPulse pipeline run."

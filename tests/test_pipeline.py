@@ -20,6 +20,18 @@ def mock_pipeline_tracking(monkeypatch):
     )
 
 
+def mock_database_loaders(monkeypatch):
+    monkeypatch.setattr(
+        "pipeline.run_pipeline.load_sales_to_database",
+        lambda df, conn, pipeline_run_id: len(df),
+    )
+
+    monkeypatch.setattr(
+        "pipeline.run_pipeline.load_warehouse_data",
+        lambda df, conn, pipeline_run_id: len(df),
+    )
+
+
 def test_pipeline_succeeds_with_valid_data(tmp_path, monkeypatch):
     csv_file = tmp_path / "valid_sales.csv"
 
@@ -46,11 +58,7 @@ def test_pipeline_succeeds_with_valid_data(tmp_path, monkeypatch):
     )
 
     mock_pipeline_tracking(monkeypatch)
-
-    monkeypatch.setattr(
-    "pipeline.run_pipeline.load_sales_to_database",
-    lambda df, conn, pipeline_run_id: len(df),
-    )
+    mock_database_loaders(monkeypatch)
 
     reports_generated = False
 
@@ -118,6 +126,11 @@ def test_pipeline_rejects_invalid_data(tmp_path, monkeypatch):
     )
 
     monkeypatch.setattr(
+        "pipeline.run_pipeline.load_warehouse_data",
+        lambda df, conn, pipeline_run_id: len(df),
+    )
+
+    monkeypatch.setattr(
         "pipeline.run_pipeline.load_quarantine_records",
         fake_load_quarantine_records,
     )
@@ -126,6 +139,7 @@ def test_pipeline_rejects_invalid_data(tmp_path, monkeypatch):
 
     assert result is True
     assert database_called is True
+
 
 def test_pipeline_generates_quality_report_for_invalid_data(
     tmp_path,
@@ -196,6 +210,11 @@ def test_pipeline_generates_quality_report_for_invalid_data(
         fake_load_sales_to_database,
     )
 
+    monkeypatch.setattr(
+        "pipeline.run_pipeline.load_warehouse_data",
+        lambda df, conn, pipeline_run_id: len(df),
+    )
+
     result = run_sales_pipeline(str(csv_file))
 
     assert result is True
@@ -203,6 +222,8 @@ def test_pipeline_generates_quality_report_for_invalid_data(
     assert quality_report["rows_valid"] == 1
     assert quality_report["rows_rejected"] == 1
     assert quality_report["invalid_quantity_rows"] == 1
+
+
 def test_pipeline_skips_already_processed_batch(tmp_path, monkeypatch):
     csv_file = tmp_path / "sales.csv"
 
@@ -243,21 +264,7 @@ def test_pipeline_skips_already_processed_batch(tmp_path, monkeypatch):
 
     assert result is True
     assert database_called is False
-def test_pipeline_quarantines_invalid_quantity_rows(tmp_path, monkeypatch):
-    csv_file = tmp_path / "sales.csv"
 
-    df = pd.DataFrame(
-        {
-            "order_id": [1001, 1002],
-            "product": ["Laptop", "Mouse"],
-            "category": ["Electronics", "Accessories"],
-            "quantity": [2, 0],
-            "price": [55000, 800],
-            "order_date": ["2026-10-07", "2026-10-07"],
-        }
-    )
-
-    df.to_csv(csv_file, index=False)
 
 def test_pipeline_quarantines_invalid_quantity_rows(
     tmp_path,
@@ -324,6 +331,11 @@ def test_pipeline_quarantines_invalid_quantity_rows(
     )
 
     monkeypatch.setattr(
+        "pipeline.run_pipeline.load_warehouse_data",
+        lambda df, conn, pipeline_run_id: len(df),
+    )
+
+    monkeypatch.setattr(
         "pipeline.run_pipeline.load_quarantine_records",
         fake_load_quarantine_records,
     )
@@ -343,6 +355,3 @@ def test_pipeline_quarantines_invalid_quantity_rows(
             "reason": "Quantity must be greater than zero.",
         }
     ]
-
-    # We will connect quarantine behavior to the pipeline
-    # after this test structure is in place.    

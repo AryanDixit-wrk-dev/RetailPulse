@@ -1,8 +1,10 @@
 select
     order_id,
-    product,
-    category,
+    date_key,
+    product_key,
+    category_key,
     quantity,
-    price,
-    order_date
-from {{ source('retailpulse', 'sales') }}
+    unit_price,
+    total_sales,
+    pipeline_run_id
+from {{ source('retailpulse_warehouse', 'fact_sales') }}

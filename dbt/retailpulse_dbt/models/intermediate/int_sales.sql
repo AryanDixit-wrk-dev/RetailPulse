@@ -1,9 +1,10 @@
 select
     order_id,
-    product,
-    category,
+    date_key,
+    product_key,
+    category_key,
     quantity,
-    price,
-    order_date,
-    quantity * price as total_sales
+    unit_price,
+    total_sales,
+    pipeline_run_id
 from {{ ref('stg_sales') }}

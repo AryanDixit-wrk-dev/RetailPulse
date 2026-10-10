@@ -1,3 +1,3 @@
 select *
 from {{ ref('stg_sales') }}
-where price <= 0
+where unit_price <= 0

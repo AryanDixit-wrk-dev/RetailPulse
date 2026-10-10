@@ -1,30 +1,45 @@
 version: 2
+
 models:
   - name: stg_sales
-    description: "Staging model containing sales records selected from the RetailPulse source table."
+    description: "Staging model built from the warehouse fact_sales table."
+
     columns:
       - name: order_id
         description: "Unique identifier for the sales order."
         data_tests:
           - unique
           - not_null
-      - name: product
-        description: "Name of the product sold."
+
+      - name: date_key
+        description: "Foreign key to the date dimension."
         data_tests:
           - not_null
-      - name: category
-        description: "Product category."
+
+      - name: product_key
+        description: "Foreign key to the product dimension."
         data_tests:
           - not_null
+
+      - name: category_key
+        description: "Foreign key to the category dimension."
+        data_tests:
+          - not_null
+
       - name: quantity
         description: "Number of units sold."
         data_tests:
           - not_null
-      - name: price
+
+      - name: unit_price
         description: "Price per unit."
         data_tests:
           - not_null
-      - name: order_date
-        description: "Date on which the order was placed."
+
+      - name: total_sales
+        description: "Total sales value for the order."
         data_tests:
           - not_null
+
+      - name: pipeline_run_id
+        description: "Identifier of the RetailPulse pipeline run."

@@ -33,3 +33,7 @@ airflow/config/
 Thumbs.db
 # Generated reports
 reports/
+
+# dbt local configuration
+dbt/retailpulse_dbt/profiles.yml
+dbt/retailpulse_dbt/.user.yml
