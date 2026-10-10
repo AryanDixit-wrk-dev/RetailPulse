@@ -161,6 +161,7 @@ def test_quality_report_contains_all_metrics():
         "missing_values_by_column",
         "invalid_quantity_percentage",
         "invalid_price_percentage",
+        "invalid_order_date_percentage",
     }
 
     assert set(report.keys()) == expected_keys
@@ -363,3 +364,30 @@ def test_quality_report_calculates_invalid_price_percentage():
 
     assert report["invalid_price_rows"] == 2
     assert report["invalid_price_percentage"] == 50.0
+
+def test_quality_report_calculates_invalid_order_date_percentage():
+    df = pd.DataFrame(
+        {
+            "order_id": [1001, 1002, 1003, 1004],
+            "product": ["Laptop", "Mouse", "Keyboard", "Monitor"],
+            "category": [
+                "Electronics",
+                "Accessories",
+                "Accessories",
+                "Electronics",
+            ],
+            "quantity": [2, 5, 3, 4],
+            "price": [55000, 800, 1500, 18000],
+            "order_date": [
+                "2026-09-25",
+                "not-a-date",
+                "invalid-date",
+                "2026-09-28",
+            ],
+        }
+    )
+
+    report = generate_quality_report(df)
+
+    assert report["invalid_order_date_rows"] == 2
+    assert report["invalid_order_date_percentage"] == 50.0

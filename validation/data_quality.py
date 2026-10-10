@@ -86,6 +86,12 @@ def generate_quality_report(df: pd.DataFrame) -> dict:
         invalid_order_date.sum()
     )
 
+    invalid_order_date_percentage = (
+        invalid_order_date_rows / rows_received * 100
+        if rows_received > 0
+        else 0.0
+    )
+
     return {
         "rows_received": rows_received,
         "rows_valid": rows_valid,
@@ -101,6 +107,7 @@ def generate_quality_report(df: pd.DataFrame) -> dict:
         "missing_values_by_column": missing_values_by_column,
         "invalid_quantity_percentage": invalid_quantity_percentage,
         "invalid_price_percentage": invalid_price_percentage,
+        "invalid_order_date_percentage": invalid_order_date_percentage,
     }
 
 
