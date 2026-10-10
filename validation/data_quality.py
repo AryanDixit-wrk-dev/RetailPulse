@@ -32,8 +32,8 @@ def generate_quality_report(df: pd.DataFrame) -> dict:
 
     rejected_percentage = (
         rows_rejected / rows_received * 100
-            if rows_received > 0
-            else 0.0
+        if rows_received > 0
+        else 0.0
     )
 
     duplicate_order_ids = int(
@@ -52,8 +52,8 @@ def generate_quality_report(df: pd.DataFrame) -> dict:
 
     missing_values_by_column = {
         column: int(count)
-            for column, count in df.isnull().sum().items()
-            if count > 0
+        for column, count in df.isnull().sum().items()
+        if count > 0
     }
 
     missing_value_percentage = (
