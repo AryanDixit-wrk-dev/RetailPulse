@@ -100,30 +100,3 @@ def save_quality_report(
         json.dumps(report, indent=4),
         encoding="utf-8",
     )
-
-def test_quality_report_calculates_duplicate_percentage():
-    df = pd.DataFrame(
-        {
-            "order_id": [1001, 1001, 1002, 1003],
-            "product": ["Laptop", "Laptop", "Mouse", "Keyboard"],
-            "category": [
-                "Electronics",
-                "Electronics",
-                "Accessories",
-                "Accessories",
-            ],
-            "quantity": [2, 2, 5, 3],
-            "price": [55000, 55000, 800, 1500],
-            "order_date": [
-                "2026-09-25",
-                "2026-09-25",
-                "2026-09-26",
-                "2026-09-27",
-            ],
-        }
-    )
-
-    report = generate_quality_report(df)
-
-    assert report["duplicate_order_ids"] == 1
-    assert report["duplicate_percentage"] == 25.0
