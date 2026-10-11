@@ -149,3 +149,11 @@ def get_pipeline_runs(limit=10):
     )
     response.raise_for_status()
     return response.json()
+def get_sales_predictions():
+    response = requests.get(
+        f"{API_URL}/predictions/sales",
+        headers=get_headers(),
+        timeout=10,
+    )
+    response.raise_for_status()
+    return response.json()

@@ -8,6 +8,7 @@ from api_client import (
     get_sales_by_date,
     get_pipeline_health,
     get_pipeline_runs,
+    get_sales_predictions,
 )
 
 
@@ -216,6 +217,40 @@ try:
 
     st.divider()
 
+    st.subheader("Demand Forecast")
+
+    prediction_data = get_sales_predictions()
+
+    if prediction_data:
+        prediction_df = pd.DataFrame(prediction_data)
+
+        prediction_df["predicted_quantity"] = prediction_df[
+            "predicted_quantity"
+        ].astype(float)
+
+        forecast_date = prediction_df["forecast_date"].iloc[0]
+
+        st.write(f"Forecast date: **{forecast_date}**")
+
+        forecast_chart = prediction_df.set_index(
+            "product_name"
+        )
+
+        st.bar_chart(
+            forecast_chart["predicted_quantity"],
+            horizontal=True,
+        )
+
+        st.dataframe(
+            prediction_df,
+            width="stretch",
+            hide_index=True,
+        )
+    else:
+        st.info("No demand predictions available.")
+
+    st.divider()
+
     st.subheader("Pipeline Health")
 
     pipeline_col1, pipeline_col2, pipeline_col3, pipeline_col4 = st.columns(4)
@@ -276,5 +311,8 @@ try:
     else:
         st.info("No pipeline runs found.")
 
-except Exception as exc:
-    st.exception(exc)
+except Exception:
+    st.error(
+        "Unable to load the dashboard. "
+        "Please check that the RetailPulse API is running."
+    )
