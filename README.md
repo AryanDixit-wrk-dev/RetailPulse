@@ -1,57 +1,91 @@
 # RetailPulse
 
-RetailPulse is an end-to-end sales data engineering and analytics platform.
+RetailPulse is an end-to-end sales data engineering, analytics, and machine learning platform.
+
+The project ingests sales data, validates and transforms it, loads it into PostgreSQL, builds analytics models with dbt, orchestrates the workflow with Apache Airflow, exposes analytics and prediction APIs through FastAPI, and provides a Streamlit decision-support dashboard.
 
 ## Architecture
 
-CSV -> Ingestion -> Data Quality & Validation -> Transformation -> PostgreSQL -> dbt -> Analytics & Reports -> Airflow -> Power BI
+CSV
+-> Ingestion
+-> Data Quality & Validation
+-> Transformation
+-> PostgreSQL
+-> dbt
+-> Analytics & Reports
+-> Machine Learning
+-> FastAPI
+-> Streamlit
+-> Airflow Orchestration
 
 ## Core Components
 
 - Python sales pipeline
-- PostgreSQL database
-- Data quality and validation
+- CSV ingestion and data validation
+- Data contracts and data quality checks
+- PostgreSQL operational and warehouse schemas
+- Star-schema warehouse with fact and dimension tables
 - dbt staging, intermediate, and mart models
 - Apache Airflow orchestration
-- Power BI dashboard
+- FastAPI analytics and prediction API
+- API-key authentication
+- Streamlit dashboard
+- Demand forecasting with Random Forest
+- Model evaluation and baseline comparison
+- Feature importance and model diagnostics
+- Data drift monitoring
+- Controlled model retraining and promotion workflow
+- Pipeline logging and observability
 - Automated Python tests
 - Docker-based Airflow environment
+- GitHub Actions CI validation
 
-## Testing
+## Data Engineering Pipeline
 
-Run the Python test suite:
+The sales pipeline performs:
 
-`python -m pytest -q`
+1. CSV ingestion
+2. Data contract validation
+3. Data quality checks
+4. Invalid-record quarantine
+5. Data transformation
+6. PostgreSQL loading
+7. Warehouse loading
+8. Analytics report generation
+9. Pipeline-run tracking and idempotency
 
-Current result: 40 passed.
+Pipeline runs are tracked with source hashing and run metadata to prevent duplicate processing.
 
-## Airflow
+## Data Warehouse
 
-Start Airflow with:
+RetailPulse uses PostgreSQL with a warehouse-oriented star schema.
 
-`docker compose --env-file .\.env -f .\airflow\docker-compose.yml up -d`
+### Main warehouse tables
 
-DAG: `retailpulse_pipeline`
+- `fact_sales`
+- `dim_product`
+- `dim_category`
+- `dim_date`
+
+Pipeline execution metadata is stored separately in `pipeline_runs`.
 
 ## dbt
 
-Project: `dbt/retailpulse_dbt/`
+The dbt project is located at:
+
+`dbt/retailpulse_dbt/`
+
+The project contains:
+
+- Staging models
+- Intermediate models
+- Mart models
+- Source definitions
+- Schema tests
+- Custom data tests
 
 Run:
 
-`cd dbt/retailpulse_dbt`
-
-`dbt build`
-
-## Power BI
-
-Dashboard: `reports/RetailPulse_Sales_Dashboard.pbix`
-
-Dashboard includes sales KPIs, category analysis, product analysis, quantity analysis, sales trend, category filtering, and date filtering.
-
-## Security
-
-Environment files, generated Airflow configuration, logs, generated data, and other local artifacts are excluded from version control where appropriate.
-
-
-GitHub repository managed with Git and VS Code.
+```powershell
+cd dbt/retailpulse_dbt
+dbt build
