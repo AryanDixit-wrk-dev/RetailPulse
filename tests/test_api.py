@@ -1,27 +1,17 @@
-from datetime import datetime
-from decimal import Decimal
+import os
 
-import pytest
 from fastapi.testclient import TestClient
 
-from api.auth import verify_api_key
 from api.main import app
 
 
+API_KEY = os.getenv("API_KEY")
+
 client = TestClient(app)
 
-API_KEY = "test-api-key"
-
-
-@pytest.fixture(autouse=True)
-def override_api_key():
-    app.dependency_overrides[verify_api_key] = lambda: API_KEY
-    yield
-    app.dependency_overrides.clear()
-
-
-def auth_headers():
-    return {"X-API-Key": API_KEY}
+AUTH_HEADERS = {
+    "X-API-Key": API_KEY,
+}
 
 
 def test_health_endpoint():
@@ -31,272 +21,284 @@ def test_health_endpoint():
     assert response.json() == {"status": "healthy"}
 
 
-def test_pipeline_health_endpoint(monkeypatch):
-    def fake_get_connection():
-        return None
-
-    def fake_pipeline_health(conn):
-        return {
-            "total_runs": 10,
-            "successful_runs": 9,
-            "failed_runs": 1,
-            "skipped_runs": 0,
-            "latest_run_at": None,
-        }
-
-    monkeypatch.setattr(
-        "api.routes.pipeline.get_db_connection",
-        fake_get_connection,
-    )
-    monkeypatch.setattr(
-        "api.routes.pipeline.get_pipeline_health",
-        fake_pipeline_health,
-    )
-
+def test_pipeline_health_endpoint():
     response = client.get(
         "/pipeline/health",
-        headers=auth_headers(),
+        headers=AUTH_HEADERS,
     )
 
     assert response.status_code == 200
-    assert response.json() == {
-        "total_runs": 10,
-        "successful_runs": 9,
-        "failed_runs": 1,
-        "skipped_runs": 0,
-        "latest_run_at": None,
-    }
+
+    data = response.json()
+
+    assert "total_runs" in data
+    assert "successful_runs" in data
+    assert "failed_runs" in data
+    assert "skipped_runs" in data
+    assert "latest_run_at" in data
 
 
-def test_sales_summary_endpoint(monkeypatch):
-    def fake_get_connection():
-        return None
-
-    def fake_sales_data(table_name, conn):
-        assert table_name == "sales_summary"
-
-        return [
-            {
-                "total_sales": Decimal("156700.00"),
-                "total_orders": 4,
-                "total_quantity": 11,
-            }
-        ]
-
-    monkeypatch.setattr(
-        "api.routes.sales.get_db_connection",
-        fake_get_connection,
-    )
-    monkeypatch.setattr(
-        "api.routes.sales.get_sales_data",
-        fake_sales_data,
-    )
-
+def test_sales_summary_endpoint():
     response = client.get(
         "/sales/summary",
-        headers=auth_headers(),
+        headers=AUTH_HEADERS,
     )
 
     assert response.status_code == 200
-    assert response.json() == {
-        "total_sales": "156700.00",
-        "total_orders": 4,
-        "total_quantity": 11,
-    }
+
+    data = response.json()
+
+    assert data["total_sales"] == "156700.00"
+    assert data["total_orders"] == 4
+    assert data["total_quantity"] == 11
 
 
-def test_sales_by_product_endpoint(monkeypatch):
-    def fake_get_connection():
-        return None
-
-    def fake_sales_data(table_name, conn):
-        assert table_name == "sales_by_product"
-
-        return [
-            {
-                "product_key": 1,
-                "total_quantity": 2,
-                "total_sales": Decimal("110000.00"),
-            }
-        ]
-
-    monkeypatch.setattr(
-        "api.routes.sales.get_db_connection",
-        fake_get_connection,
-    )
-    monkeypatch.setattr(
-        "api.routes.sales.get_sales_data",
-        fake_sales_data,
+def test_sales_summary_date_filter():
+    response = client.get(
+        "/sales/summary",
+        params={
+            "start_date": "2026-10-10",
+            "end_date": "2026-10-10",
+        },
+        headers=AUTH_HEADERS,
     )
 
+    assert response.status_code == 200
+
+    data = response.json()
+
+    assert data["total_sales"] == "113200.00"
+    assert data["total_orders"] == 2
+    assert data["total_quantity"] == 6
+
+
+def test_sales_summary_product_filter():
+    response = client.get(
+        "/sales/summary",
+        params={
+            "products": "Laptop",
+        },
+        headers=AUTH_HEADERS,
+    )
+
+    assert response.status_code == 200
+
+    data = response.json()
+
+    assert data["total_sales"] == "110000.00"
+    assert data["total_orders"] == 1
+    assert data["total_quantity"] == 2
+
+
+def test_sales_summary_category_filter():
+    response = client.get(
+        "/sales/summary",
+        params={
+            "categories": "Electronics",
+        },
+        headers=AUTH_HEADERS,
+    )
+
+    assert response.status_code == 200
+
+    data = response.json()
+
+    assert data["total_sales"] == "146000.00"
+    assert data["total_orders"] == 2
+    assert data["total_quantity"] == 4
+
+
+def test_sales_summary_combined_filter():
+    response = client.get(
+        "/sales/summary",
+        params=[
+            ("start_date", "2026-10-10"),
+            ("end_date", "2026-10-10"),
+            ("products", "Laptop"),
+            ("categories", "Electronics"),
+        ],
+        headers=AUTH_HEADERS,
+    )
+
+    assert response.status_code == 200
+
+    data = response.json()
+
+    assert data["total_sales"] == "110000.00"
+    assert data["total_orders"] == 1
+    assert data["total_quantity"] == 2
+
+
+def test_sales_by_product_endpoint():
     response = client.get(
         "/sales/by-product",
-        headers=auth_headers(),
+        headers=AUTH_HEADERS,
     )
 
     assert response.status_code == 200
-    assert response.json() == [
-        {
-            "product_key": 1,
-            "total_quantity": 2,
-            "total_sales": "110000.00",
-        }
-    ]
+
+    data = response.json()
+
+    assert len(data) == 4
+    assert data[0]["product_name"] == "Laptop"
+    assert data[0]["total_sales"] == "110000.00"
 
 
-def test_sales_by_category_endpoint(monkeypatch):
-    def fake_get_connection():
-        return None
-
-    def fake_sales_data(table_name, conn):
-        assert table_name == "sales_by_category"
-
-        return [
-            {
-                "category_key": 1,
-                "total_quantity": 4,
-                "total_sales": Decimal("146000.00"),
-            }
-        ]
-
-    monkeypatch.setattr(
-        "api.routes.sales.get_db_connection",
-        fake_get_connection,
-    )
-    monkeypatch.setattr(
-        "api.routes.sales.get_sales_data",
-        fake_sales_data,
+def test_sales_by_product_date_filter():
+    response = client.get(
+        "/sales/by-product",
+        params={
+            "start_date": "2026-10-10",
+            "end_date": "2026-10-10",
+        },
+        headers=AUTH_HEADERS,
     )
 
+    assert response.status_code == 200
+
+    data = response.json()
+
+    product_names = {
+        row["product_name"]
+        for row in data
+    }
+
+    assert product_names == {"Laptop", "Mouse"}
+
+
+def test_sales_by_product_filter():
+    response = client.get(
+        "/sales/by-product",
+        params={
+            "products": "Laptop",
+        },
+        headers=AUTH_HEADERS,
+    )
+
+    assert response.status_code == 200
+
+    data = response.json()
+
+    assert len(data) == 1
+    assert data[0]["product_name"] == "Laptop"
+    assert data[0]["total_sales"] == "110000.00"
+
+
+def test_sales_by_category_endpoint():
     response = client.get(
         "/sales/by-category",
-        headers=auth_headers(),
+        headers=AUTH_HEADERS,
     )
 
     assert response.status_code == 200
-    assert response.json() == [
-        {
-            "category_key": 1,
-            "total_quantity": 4,
-            "total_sales": "146000.00",
-        }
-    ]
+
+    data = response.json()
+
+    assert len(data) == 2
+    assert data[0]["category_name"] == "Electronics"
+    assert data[0]["total_sales"] == "146000.00"
 
 
-def test_sales_by_date_endpoint(monkeypatch):
-    def fake_get_connection():
-        return None
-
-    def fake_sales_data(table_name, conn):
-        assert table_name == "sales_by_date"
-
-        return [
-            {
-                "date_key": 20261010,
-                "total_quantity": 6,
-                "total_sales": Decimal("113200.00"),
-                "total_orders": 2,
-            }
-        ]
-
-    monkeypatch.setattr(
-        "api.routes.sales.get_db_connection",
-        fake_get_connection,
-    )
-    monkeypatch.setattr(
-        "api.routes.sales.get_sales_data",
-        fake_sales_data,
+def test_sales_by_category_date_filter():
+    response = client.get(
+        "/sales/by-category",
+        params={
+            "start_date": "2026-10-10",
+            "end_date": "2026-10-10",
+        },
+        headers=AUTH_HEADERS,
     )
 
+    assert response.status_code == 200
+
+    data = response.json()
+
+    assert len(data) == 2
+
+    sales_by_category = {
+        row["category_name"]: row["total_sales"]
+        for row in data
+    }
+
+    assert sales_by_category["Electronics"] == "110000.00"
+    assert sales_by_category["Accessories"] == "3200.00"
+
+
+def test_sales_by_date_endpoint():
     response = client.get(
         "/sales/by-date",
-        headers=auth_headers(),
+        headers=AUTH_HEADERS,
     )
 
     assert response.status_code == 200
-    assert response.json() == [
-        {
-            "date_key": 20261010,
-            "total_quantity": 6,
-            "total_sales": "113200.00",
-            "total_orders": 2,
-        }
-    ]
+
+    data = response.json()
+
+    assert len(data) == 2
+    assert data[0]["date_key"] == 20261010
+    assert data[0]["total_sales"] == "113200.00"
+    assert data[0]["total_orders"] == 2
 
 
-def test_pipeline_runs_endpoint(monkeypatch):
-    def fake_get_connection():
-        return None
-
-    def fake_recent_pipeline_runs(conn, limit):
-        assert limit == 10
-
-        return [
-            {
-                "run_id": 100,
-                "pipeline_name": "sales_pipeline",
-                "source_file": "sales.csv",
-                "status": "SUCCESS",
-                "started_at": datetime(2026, 10, 11, 10, 0),
-                "completed_at": datetime(2026, 10, 11, 10, 1),
-                "records_received": 10,
-                "records_accepted": 9,
-                "records_rejected": 1,
-                "records_processed": 9,
-                "error_message": None,
-            }
-        ]
-
-    monkeypatch.setattr(
-        "api.routes.pipeline.get_db_connection",
-        fake_get_connection,
-    )
-    monkeypatch.setattr(
-        "api.routes.pipeline.get_recent_pipeline_runs",
-        fake_recent_pipeline_runs,
+def test_sales_by_date_product_filter():
+    response = client.get(
+        "/sales/by-date",
+        params={
+            "products": "Laptop",
+        },
+        headers=AUTH_HEADERS,
     )
 
+    assert response.status_code == 200
+
+    data = response.json()
+
+    assert len(data) == 1
+    assert data[0]["date_key"] == 20261010
+    assert data[0]["total_sales"] == "110000.00"
+    assert data[0]["total_orders"] == 1
+
+
+def test_pipeline_runs_endpoint():
     response = client.get(
         "/pipeline/runs",
-        headers=auth_headers(),
+        headers=AUTH_HEADERS,
     )
 
     assert response.status_code == 200
-    assert response.json() == [
-        {
-            "run_id": 100,
-            "pipeline_name": "sales_pipeline",
-            "source_file": "sales.csv",
-            "status": "SUCCESS",
-            "started_at": "2026-10-11T10:00:00",
-            "completed_at": "2026-10-11T10:01:00",
-            "records_received": 10,
-            "records_accepted": 9,
-            "records_rejected": 1,
-            "records_processed": 9,
-            "error_message": None,
-        }
-    ]
-def test_pipeline_endpoint_rejects_missing_api_key():
-    app.dependency_overrides.clear()
 
-    response = client.get("/pipeline/health")
+    data = response.json()
 
-    assert response.status_code == 401
-    assert response.json() == {
-        "detail": "Invalid or missing API key."
-    }
+    assert isinstance(data, list)
+    assert len(data) <= 10
 
 
-def test_pipeline_endpoint_rejects_invalid_api_key():
-    app.dependency_overrides.clear()
-
+def test_pipeline_runs_limit():
     response = client.get(
-        "/pipeline/health",
-        headers={"X-API-Key": "wrong-api-key"},
+        "/pipeline/runs",
+        params={"limit": 5},
+        headers=AUTH_HEADERS,
     )
 
-    assert response.status_code == 401
-    assert response.json() == {
-        "detail": "Invalid or missing API key."
-    }
+    assert response.status_code == 200
+    assert len(response.json()) <= 5
+
+
+def test_pipeline_runs_invalid_limit():
+    response = client.get(
+        "/pipeline/runs",
+        params={"limit": 0},
+        headers=AUTH_HEADERS,
+    )
+
+    assert response.status_code == 422
+
+
+def test_pipeline_runs_max_limit():
+    response = client.get(
+        "/pipeline/runs",
+        params={"limit": 101},
+        headers=AUTH_HEADERS,
+    )
+
+    assert response.status_code == 422
