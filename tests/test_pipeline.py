@@ -14,9 +14,21 @@ def mock_pipeline_tracking(monkeypatch):
         lambda conn, pipeline_name, source_file, source_hash: 1,
     )
 
+    def fake_complete_pipeline_run(
+        conn,
+        run_id,
+        status,
+        records_received=None,
+        records_accepted=None,
+        records_rejected=None,
+        records_processed=None,
+        error_message=None,
+    ):
+        return None
+
     monkeypatch.setattr(
         "pipeline.run_pipeline.complete_pipeline_run",
-        lambda conn, run_id, status, records_processed=None, error_message=None: None,
+        fake_complete_pipeline_run,
     )
 
 

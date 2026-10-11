@@ -46,6 +46,8 @@ def create_pipeline_run(
 ) -> int:
     """Create a pipeline run record and return its run ID."""
 
+    started_at = datetime.now().astimezone()
+
     with conn.cursor() as cursor:
         cursor.execute(
             """
@@ -53,9 +55,10 @@ def create_pipeline_run(
                 pipeline_name,
                 source_file,
                 source_hash,
-                status
+                status,
+                started_at
             )
-            VALUES (%s, %s, %s, %s)
+            VALUES (%s, %s, %s, %s, %s)
             RETURNING run_id
             """,
             (
@@ -63,6 +66,7 @@ def create_pipeline_run(
                 source_file,
                 source_hash,
                 "RUNNING",
+                started_at,
             ),
         )
 
@@ -76,10 +80,15 @@ def complete_pipeline_run(
     conn,
     run_id: int,
     status: str,
+    records_received: int | None = None,
+    records_accepted: int | None = None,
+    records_rejected: int | None = None,
     records_processed: int | None = None,
     error_message: str | None = None,
 ):
     """Complete a pipeline run with its final status."""
+
+    completed_at = datetime.now().astimezone()
 
     with conn.cursor() as cursor:
         cursor.execute(
@@ -88,13 +97,19 @@ def complete_pipeline_run(
             SET
                 completed_at = %s,
                 status = %s,
+                records_received = %s,
+                records_accepted = %s,
+                records_rejected = %s,
                 records_processed = %s,
                 error_message = %s
             WHERE run_id = %s
             """,
             (
-                datetime.now().astimezone(),
+                completed_at,
                 status,
+                records_received,
+                records_accepted,
+                records_rejected,
                 records_processed,
                 error_message,
                 run_id,
@@ -111,6 +126,8 @@ def skip_pipeline_run(
 ):
     """Mark a pipeline run as skipped."""
 
+    completed_at = datetime.now().astimezone()
+
     with conn.cursor() as cursor:
         cursor.execute(
             """
@@ -122,7 +139,7 @@ def skip_pipeline_run(
             WHERE run_id = %s
             """,
             (
-                datetime.now().astimezone(),
+                completed_at,
                 "SKIPPED",
                 reason,
                 run_id,

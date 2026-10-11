@@ -2,7 +2,6 @@ import json
 
 import pandas as pd
 
-from transformation.sales_transform import transform_sales_data
 from analytics.generate_report import generate_sales_report
 
 
@@ -53,6 +52,8 @@ def test_generate_sales_report(tmp_path, monkeypatch):
     assert summary["total_quantity"] == 7
     assert summary["total_sales"] == 114000.0
     assert summary["average_order_value"] == 57000.0
+
+
 def test_generate_sales_report_transforms_data(monkeypatch):
     sales_df = pd.DataFrame(
         {

@@ -2,7 +2,7 @@ version: 2
 
 sources:
   - name: retailpulse_warehouse
-    description: "RetailPulse dimensional warehouse stored in PostgreSQL."
+    description: "RetailPulse dimensional warehouse and pipeline metadata stored in PostgreSQL."
     schema: public
 
     tables:
@@ -65,3 +65,31 @@ sources:
             description: "ISO day of the week."
           - name: day_name
             description: "Name of the day."
+
+      - name: pipeline_runs
+        description: "Pipeline execution metadata and record-level processing statistics."
+        columns:
+          - name: run_id
+            description: "Unique identifier for the pipeline run."
+          - name: pipeline_name
+            description: "Name of the pipeline."
+          - name: source_file
+            description: "Source file processed by the pipeline."
+          - name: source_hash
+            description: "SHA-256 hash of the source file."
+          - name: status
+            description: "Final status of the pipeline run."
+          - name: started_at
+            description: "Timestamp when the pipeline run started."
+          - name: completed_at
+            description: "Timestamp when the pipeline run completed."
+          - name: records_received
+            description: "Number of records received from the source."
+          - name: records_accepted
+            description: "Number of records accepted for processing."
+          - name: records_rejected
+            description: "Number of records rejected by validation."
+          - name: records_processed
+            description: "Number of records successfully processed."
+          - name: error_message
+            description: "Error message recorded for failed runs."

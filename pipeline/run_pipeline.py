@@ -1,43 +1,38 @@
 import argparse
-import logging
+import time
 
 from psycopg.errors import UniqueViolation
-from db.loaders.warehouse_loader import load_warehouse_data
-from ingestion.load_csv import load_csv
+
+from analytics.generate_report import generate_sales_report
 from contracts.sales_contract import validate_sales_schema
-from validation.validate_sales import (
-    validate_sales_data,
-    split_valid_invalid_sales,
-)
+from db.connection import get_connection
 from db.loaders.quarantine_loader import load_quarantine_records
+from db.loaders.sales_loader import load_sales_to_database
+from db.loaders.warehouse_loader import load_warehouse_data
+from db.pipeline_runs import (
+    calculate_file_hash,
+    complete_pipeline_run,
+    create_pipeline_run,
+    pipeline_run_exists,
+    skip_pipeline_run,
+)
+from ingestion.load_csv import load_csv
+from transformation.sales_transform import transform_sales_data
+from utils.logging_config import configure_logging
 from validation.data_quality import (
     generate_quality_report,
     save_quality_report,
 )
-from transformation.sales_transform import transform_sales_data
-from db.connection import get_connection
-from db.pipeline_runs import (
-    calculate_file_hash,
-    pipeline_run_exists,
-    create_pipeline_run,
-    complete_pipeline_run,
-    skip_pipeline_run,
-)
-from db.loaders.sales_loader import load_sales_to_database
-from analytics.generate_report import generate_sales_report
+from validation.validate_sales import split_valid_invalid_sales
 
 
-logging.basicConfig(
-    filename="logs/pipeline.log",
-    level=logging.INFO,
-    format="%(asctime)s - %(levelname)s - %(message)s",
-)
-
-logger = logging.getLogger(__name__)
+logger = configure_logging()
 
 
 def run_sales_pipeline(file_path: str):
-    logger.info("Starting sales pipeline")
+    start_time = time.perf_counter()
+
+    logger.info("Starting sales pipeline: %s", file_path)
 
     conn = get_connection()
 
@@ -62,6 +57,8 @@ def run_sales_pipeline(file_path: str):
         source_hash=source_hash,
     )
 
+    logger.info("Created pipeline run: %d", run_id)
+
     try:
         # 1. Extract
         df = load_csv(file_path)
@@ -77,11 +74,17 @@ def run_sales_pipeline(file_path: str):
                 conn,
                 run_id=run_id,
                 status="FAILED",
+                records_received=len(df),
+                records_accepted=0,
+                records_rejected=len(df),
                 records_processed=0,
                 error_message=error_message,
             )
 
-            logger.error("Data contract validation failed")
+            logger.error(
+                "Data contract validation failed for run %d",
+                run_id,
+            )
 
             for error in schema_errors:
                 logger.error(error)
@@ -99,23 +102,31 @@ def run_sales_pipeline(file_path: str):
         valid_rows, invalid_rows, rejection_reasons = split_valid_invalid_sales(df)
 
         logger.info(
-            "Valid rows: %d, Invalid rows: %d",
+            "Validation completed. Valid rows: %d, Invalid rows: %d",
             len(valid_rows),
             len(invalid_rows),
         )
 
-        df = valid_rows 
+        df = valid_rows
+
         if not invalid_rows.empty:
             for reason in rejection_reasons.unique():
                 rows = invalid_rows[rejection_reasons == reason]
+
                 load_quarantine_records(
-                            rows,
-                            conn,
-                            pipeline_run_id=run_id,
-                            source_file=file_path,
-                            rejection_reason=reason,
-                        )
-        
+                    rows,
+                    conn,
+                    pipeline_run_id=run_id,
+                    source_file=file_path,
+                    rejection_reason=reason,
+                )
+
+                logger.warning(
+                    "Quarantined %d rows. Reason: %s",
+                    len(rows),
+                    reason,
+                )
+
         # 5. Transform
         df = transform_sales_data(df)
         logger.info("Sales data transformed")
@@ -132,6 +143,7 @@ def run_sales_pipeline(file_path: str):
             affected_rows,
         )
 
+        # 7. Load warehouse
         warehouse_rows = load_warehouse_data(
             df,
             conn,
@@ -142,17 +154,20 @@ def run_sales_pipeline(file_path: str):
             "Warehouse load completed. Rows loaded: %d",
             warehouse_rows,
         )
-        
-        # 7. Generate reports
+
+        # 8. Generate reports
         generate_sales_report()
         logger.info("Reports generated successfully")
 
-        # 8. Complete pipeline run
+        # 9. Complete pipeline run
         try:
             complete_pipeline_run(
                 conn,
                 run_id=run_id,
                 status="SUCCESS",
+                records_received=len(df) + len(invalid_rows),
+                records_accepted=len(df),
+                records_rejected=len(invalid_rows),
                 records_processed=len(df),
             )
         except UniqueViolation:
@@ -164,19 +179,41 @@ def run_sales_pipeline(file_path: str):
                 reason="Batch was already processed successfully.",
             )
 
+            duration = time.perf_counter() - start_time
+
             logger.info(
                 "Batch was already processed by another pipeline run. "
-                "Run skipped: %s",
+                "Run skipped: %d, Duration: %.2f seconds",
                 run_id,
+                duration,
             )
 
             return True
 
-        logger.info("Pipeline completed successfully")
+        duration = time.perf_counter() - start_time
+
+        logger.info(
+            "Pipeline completed successfully. "
+            "Run: %d, Received: %d, Accepted: %d, Rejected: %d, "
+            "Processed: %d, Duration: %.2f seconds",
+            run_id,
+            len(df) + len(invalid_rows),
+            len(df),
+            len(invalid_rows),
+            len(df),
+            duration,
+        )
+
         return True
 
     except Exception as exc:
-        logger.exception("Pipeline failed")
+        duration = time.perf_counter() - start_time
+
+        logger.exception(
+            "Pipeline failed. Run: %d, Duration: %.2f seconds",
+            run_id,
+            duration,
+        )
 
         complete_pipeline_run(
             conn,

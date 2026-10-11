@@ -1,4 +1,9 @@
-from db.analytics import get_sales_summary
+from db.analytics import (
+    get_sales_by_category,
+    get_sales_by_date,
+    get_sales_by_product,
+    get_sales_summary,
+)
 
 
 def test_get_sales_summary(monkeypatch):
@@ -33,8 +38,6 @@ def test_get_sales_summary(monkeypatch):
     assert result["total_quantity"] == 10
     assert result["total_sales"] == 118500
     assert result["average_order_value"] == 39500
-
-from db.analytics import get_sales_by_product
 
 
 def test_get_sales_by_product():
@@ -82,8 +85,6 @@ def test_get_sales_by_product():
         4000,
     ]
 
-from db.analytics import get_sales_by_category
-
 
 def test_get_sales_by_category():
     class FakeCursor:
@@ -129,8 +130,6 @@ def test_get_sales_by_category():
     ]
 
     assert list(result["total_orders"]) == [1, 2]
-
-from db.analytics import get_sales_by_date
 
 
 def test_get_sales_by_date():
